@@ -1,0 +1,2422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<meta
+  name="description"
+  content="Professional Dictionary and Word Lookup App using the Free Dictionary API."
+>
+
+<meta name="theme-color" content="#06101c">
+
+<title>WordLookup — Dictionary</title>
+
+<style>
+
+/* =====================================================
+   WORDLOOKUP
+   Task 28 - Dictionary & Word Lookup App
+   Single File Version
+===================================================== */
+
+:root {
+    --bg: #050b14;
+    --panel: #091522;
+    --panel2: #0d1c2b;
+    --border: #1b354b;
+
+    --text: #edf7ff;
+    --muted: #8097aa;
+
+    --cyan: #20c8ff;
+    --cyan-soft: rgba(32, 200, 255, .12);
+
+    --green: #38e58a;
+    --red: #ff5d70;
+
+    --radius: 14px;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    min-height: 100vh;
+
+    color: var(--text);
+
+    font-family:
+        Inter,
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+
+    background:
+        linear-gradient(
+            rgba(32, 200, 255, .025) 1px,
+            transparent 1px
+        ),
+        linear-gradient(
+            90deg,
+            rgba(32, 200, 255, .025) 1px,
+            transparent 1px
+        ),
+        var(--bg);
+
+    background-size: 32px 32px;
+}
+
+button,
+input {
+    font: inherit;
+}
+
+button {
+    cursor: pointer;
+}
+
+.hidden {
+    display: none !important;
+}
+
+
+/* =====================================================
+   APP
+===================================================== */
+
+.app {
+    width: min(1100px, 100%);
+    margin: auto;
+    padding: 0 20px;
+}
+
+
+/* =====================================================
+   HEADER
+===================================================== */
+
+header {
+    min-height: 80px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    border-bottom: 1px solid var(--border);
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.logo-box {
+    width: 42px;
+    height: 42px;
+
+    display: grid;
+    place-items: center;
+
+    border: 1px solid var(--cyan);
+
+    background: var(--cyan-soft);
+
+    color: var(--cyan);
+
+    font-weight: 800;
+    font-family: monospace;
+}
+
+.logo-title {
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 2px;
+}
+
+.logo-subtitle {
+    margin-top: 3px;
+
+    color: var(--muted);
+
+    font-size: 9px;
+
+    letter-spacing: 1px;
+
+    font-family: monospace;
+}
+
+.api-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    color: var(--green);
+
+    font-family: monospace;
+
+    font-size: 9px;
+
+    letter-spacing: 1px;
+}
+
+.status-dot {
+    width: 7px;
+    height: 7px;
+
+    border-radius: 50%;
+
+    background: var(--green);
+}
+
+
+/* =====================================================
+   HERO
+===================================================== */
+
+.hero {
+    padding: 75px 0 40px;
+
+    max-width: 760px;
+}
+
+.tag {
+    display: inline-block;
+
+    padding: 7px 10px;
+
+    border: 1px solid var(--border);
+
+    color: var(--cyan);
+
+    font-family: monospace;
+
+    font-size: 9px;
+
+    letter-spacing: 1.5px;
+}
+
+.hero h1 {
+    margin-top: 22px;
+
+    font-size: clamp(40px, 7vw, 70px);
+
+    line-height: .98;
+
+    letter-spacing: -3px;
+}
+
+.hero h1 span {
+    color: var(--cyan);
+}
+
+.hero p {
+    max-width: 650px;
+
+    margin-top: 23px;
+
+    color: var(--muted);
+
+    font-size: 15px;
+
+    line-height: 1.7;
+}
+
+
+/* =====================================================
+   SEARCH
+===================================================== */
+
+.search-area {
+    margin-bottom: 40px;
+}
+
+.search-box {
+    min-height: 65px;
+
+    display: flex;
+    align-items: center;
+
+    padding: 7px;
+
+    border: 1px solid var(--border);
+
+    background: rgba(9, 21, 34, .95);
+}
+
+.search-box:focus-within {
+    border-color: var(--cyan);
+}
+
+.search-symbol {
+    width: 42px;
+
+    text-align: center;
+
+    color: var(--cyan);
+
+    font-size: 25px;
+}
+
+#wordInput {
+    flex: 1;
+
+    min-width: 0;
+
+    height: 50px;
+
+    border: none;
+    outline: none;
+
+    background: transparent;
+
+    color: var(--text);
+
+    font-size: 16px;
+}
+
+#wordInput::placeholder {
+    color: #526b80;
+}
+
+.clear-btn {
+    width: 42px;
+    height: 42px;
+
+    border: none;
+
+    background: transparent;
+
+    color: var(--muted);
+
+    font-size: 24px;
+}
+
+.clear-btn:hover {
+    color: var(--text);
+}
+
+.search-btn {
+    min-width: 110px;
+    height: 50px;
+
+    border: none;
+
+    background: var(--cyan);
+
+    color: #00111a;
+
+    font-size: 10px;
+
+    font-weight: 800;
+
+    letter-spacing: 1px;
+}
+
+.search-btn:hover {
+    filter: brightness(1.08);
+}
+
+.search-btn:disabled {
+    opacity: .55;
+
+    cursor: wait;
+}
+
+
+/* =====================================================
+   SUGGESTIONS
+===================================================== */
+
+.suggestions {
+    display: flex;
+    flex-wrap: wrap;
+
+    align-items: center;
+
+    gap: 8px;
+
+    margin-top: 12px;
+}
+
+.suggestions span {
+    color: var(--muted);
+
+    font-size: 9px;
+
+    font-family: monospace;
+}
+
+.suggestion {
+    padding: 6px 10px;
+
+    border: 1px solid var(--border);
+
+    background: transparent;
+
+    color: #a7bfd2;
+
+    font-size: 10px;
+}
+
+.suggestion:hover {
+    border-color: var(--cyan);
+
+    color: var(--cyan);
+}
+
+
+/* =====================================================
+   LOADING
+===================================================== */
+
+.state {
+    padding: 30px;
+
+    border: 1px solid var(--border);
+
+    background: var(--panel);
+
+    text-align: center;
+}
+
+.loader {
+    width: 32px;
+    height: 32px;
+
+    margin: auto;
+
+    border: 3px solid var(--border);
+
+    border-top-color: var(--cyan);
+
+    border-radius: 50%;
+
+    animation: spin .8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.state h3 {
+    margin-top: 15px;
+
+    font-size: 13px;
+
+    letter-spacing: 1px;
+}
+
+.state p {
+    margin-top: 7px;
+
+    color: var(--muted);
+
+    font-size: 12px;
+}
+
+
+/* =====================================================
+   ERROR
+===================================================== */
+
+.error {
+    display: flex;
+    align-items: center;
+
+    gap: 15px;
+
+    padding: 22px;
+
+    border: 1px solid rgba(255, 93, 112, .35);
+
+    background: rgba(255, 93, 112, .04);
+}
+
+.error-icon {
+    width: 43px;
+    height: 43px;
+
+    flex-shrink: 0;
+
+    display: grid;
+    place-items: center;
+
+    border: 1px solid var(--red);
+
+    color: var(--red);
+
+    font-weight: 800;
+}
+
+.error h3 {
+    font-size: 13px;
+
+    letter-spacing: 1px;
+}
+
+.error p {
+    margin-top: 6px;
+
+    color: var(--muted);
+
+    font-size: 12px;
+
+    line-height: 1.5;
+}
+
+
+/* =====================================================
+   RESULT
+===================================================== */
+
+.result {
+    padding: 28px;
+
+    border: 1px solid var(--border);
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(32, 200, 255, .04),
+            transparent 45%
+        ),
+        var(--panel);
+}
+
+.word-header {
+    display: flex;
+    justify-content: space-between;
+
+    gap: 20px;
+
+    padding-bottom: 25px;
+
+    border-bottom: 1px solid var(--border);
+}
+
+.result-label {
+    color: var(--cyan);
+
+    font-family: monospace;
+
+    font-size: 9px;
+
+    letter-spacing: 1.5px;
+}
+
+#resultWord {
+    margin-top: 9px;
+
+    font-size: clamp(35px, 7vw, 55px);
+
+    line-height: 1;
+
+    letter-spacing: -2px;
+}
+
+#phonetic {
+    margin-top: 9px;
+
+    color: var(--muted);
+
+    font-family: monospace;
+
+    font-size: 13px;
+}
+
+.audio-btn {
+    width: 52px;
+    height: 52px;
+
+    flex-shrink: 0;
+
+    border: 1px solid var(--cyan);
+
+    background: var(--cyan-soft);
+
+    color: var(--cyan);
+
+    font-size: 19px;
+}
+
+.audio-btn:disabled {
+    opacity: .3;
+
+    cursor: not-allowed;
+}
+
+
+/* =====================================================
+   META
+===================================================== */
+
+.meta {
+    display: flex;
+    flex-wrap: wrap;
+
+    gap: 8px;
+
+    padding: 18px 0;
+}
+
+.meta-item {
+    padding: 7px 10px;
+
+    border: 1px solid var(--border);
+
+    color: #a7bfd2;
+
+    font-family: monospace;
+
+    font-size: 9px;
+}
+
+
+/* =====================================================
+   SECTION
+===================================================== */
+
+.section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 24px 0 15px;
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+}
+
+.section-number {
+    color: var(--cyan);
+
+    font-family: monospace;
+
+    font-size: 10px;
+}
+
+.section-head h3 {
+    font-size: 13px;
+
+    letter-spacing: 1.5px;
+}
+
+.count {
+    color: var(--muted);
+
+    font-family: monospace;
+
+    font-size: 9px;
+}
+
+
+/* =====================================================
+   MEANING CARDS
+===================================================== */
+
+.meanings {
+    display: grid;
+
+    gap: 12px;
+}
+
+.meaning-card {
+    padding: 20px;
+
+    border: 1px solid var(--border);
+
+    background: var(--panel2);
+}
+
+.part {
+    margin-bottom: 16px;
+
+    color: var(--cyan);
+
+    font-family: monospace;
+
+    font-size: 10px;
+
+    font-weight: 700;
+
+    text-transform: uppercase;
+
+    letter-spacing: 1px;
+}
+
+.definition {
+    display: grid;
+
+    grid-template-columns: 30px 1fr;
+
+    gap: 7px;
+
+    margin-bottom: 17px;
+}
+
+.definition-number {
+    color: var(--muted);
+
+    font-family: monospace;
+
+    font-size: 10px;
+}
+
+.definition-text {
+    color: #dbe9f4;
+
+    font-size: 14px;
+
+    line-height: 1.7;
+}
+
+.example {
+    margin-top: 8px;
+
+    padding: 11px 13px;
+
+    border-left: 2px solid var(--cyan);
+
+    background: rgba(32, 200, 255, .04);
+
+    color: var(--muted);
+
+    font-size: 12px;
+
+    line-height: 1.6;
+
+    font-style: italic;
+}
+
+
+/* =====================================================
+   SOURCE
+===================================================== */
+
+.source {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    margin-top: 20px;
+
+    padding: 15px;
+
+    border: 1px solid var(--border);
+}
+
+.source small {
+    display: block;
+
+    margin-bottom: 5px;
+
+    color: var(--muted);
+
+    font-family: monospace;
+
+    font-size: 8px;
+
+    letter-spacing: 1px;
+}
+
+.source strong {
+    font-size: 11px;
+}
+
+.live {
+    padding: 5px 7px;
+
+    border: 1px solid rgba(56, 229, 138, .3);
+
+    color: var(--green);
+
+    font-family: monospace;
+
+    font-size: 8px;
+}
+
+
+/* =====================================================
+   RECENT
+===================================================== */
+
+.recent {
+    padding: 30px 0;
+}
+
+.recent-list {
+    display: flex;
+    flex-wrap: wrap;
+
+    gap: 8px;
+}
+
+.recent-word {
+    padding: 8px 11px;
+
+    border: 1px solid var(--border);
+
+    background: var(--panel);
+
+    color: #a7bfd2;
+
+    font-family: monospace;
+
+    font-size: 10px;
+}
+
+.recent-word:hover {
+    border-color: var(--cyan);
+
+    color: var(--cyan);
+}
+
+.clear-history {
+    border: none;
+
+    background: transparent;
+
+    color: var(--muted);
+
+    font-family: monospace;
+
+    font-size: 9px;
+
+    letter-spacing: 1px;
+}
+
+.clear-history:hover {
+    color: var(--cyan);
+}
+
+.empty {
+    color: var(--muted);
+
+    font-size: 12px;
+}
+
+
+/* =====================================================
+   FOOTER
+===================================================== */
+
+footer {
+    min-height: 70px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 15px;
+
+    border-top: 1px solid var(--border);
+
+    color: #52697d;
+
+    font-family: monospace;
+
+    font-size: 8px;
+
+    letter-spacing: 1px;
+}
+
+
+/* =====================================================
+   MOBILE
+===================================================== */
+
+@media (max-width: 650px) {
+
+    .app {
+        padding: 0 14px;
+    }
+
+    header {
+        min-height: 70px;
+    }
+
+    .logo-box {
+        width: 36px;
+        height: 36px;
+    }
+
+    .logo-title {
+        font-size: 13px;
+    }
+
+    .api-status {
+        font-size: 8px;
+    }
+
+    .hero {
+        padding: 55px 0 35px;
+    }
+
+    .hero h1 {
+        font-size: 43px;
+
+        letter-spacing: -2px;
+    }
+
+    .hero p {
+        font-size: 13px;
+    }
+
+    .search-box {
+        min-height: 58px;
+    }
+
+    .search-symbol {
+        width: 35px;
+    }
+
+    #wordInput {
+        font-size: 14px;
+    }
+
+    .search-btn {
+        min-width: 80px;
+
+        height: 44px;
+
+        font-size: 9px;
+    }
+
+    .clear-btn {
+        width: 32px;
+    }
+
+    .result {
+        padding: 18px;
+    }
+
+    #resultWord {
+        font-size: 38px;
+    }
+
+    .meaning-card {
+        padding: 16px;
+    }
+
+    footer {
+        flex-direction: column;
+
+        align-items: flex-start;
+
+        justify-content: center;
+
+        padding: 18px 0;
+    }
+}
+
+
+@media (max-width: 430px) {
+
+    .search-box {
+        flex-wrap: wrap;
+    }
+
+    .search-symbol {
+        display: none;
+    }
+
+    #wordInput {
+        height: 43px;
+    }
+
+    .search-btn {
+        width: 100%;
+
+        margin-top: 5px;
+    }
+
+    .hero h1 {
+        font-size: 37px;
+    }
+}
+
+</style>
+</head>
+
+
+<body>
+
+<div class="app">
+
+    <!-- HEADER -->
+    <header>
+
+        <div class="logo">
+
+            <div class="logo-box">
+                W
+            </div>
+
+            <div>
+                <div class="logo-title">
+                    WORDLOOKUP
+                </div>
+
+                <div class="logo-subtitle">
+                    DICTIONARY INTELLIGENCE
+                </div>
+            </div>
+
+        </div>
+
+
+        <div class="api-status">
+
+            <span class="status-dot"></span>
+
+            <span id="apiStatus">
+                API READY
+            </span>
+
+        </div>
+
+    </header>
+
+
+    <!-- HERO -->
+    <section class="hero">
+
+        <span class="tag">
+            REAL-TIME WORD INTELLIGENCE
+        </span>
+
+        <h1>
+            Discover the meaning
+            <span>behind every word.</span>
+        </h1>
+
+        <p>
+            Search real dictionary data including
+            definitions, parts of speech, phonetics,
+            pronunciation and example sentences.
+        </p>
+
+    </section>
+
+
+    <!-- SEARCH -->
+    <section class="search-area">
+
+        <form id="searchForm">
+
+            <div class="search-box">
+
+                <div class="search-symbol">
+                    ⌕
+                </div>
+
+                <input
+                    id="wordInput"
+                    type="text"
+                    placeholder="Enter a word..."
+                    autocomplete="off"
+                    maxlength="50"
+                    aria-label="Dictionary word"
+                >
+
+                <button
+                    type="button"
+                    class="clear-btn"
+                    id="clearButton"
+                    aria-label="Clear"
+                >
+                    ×
+                </button>
+
+                <button
+                    type="submit"
+                    class="search-btn"
+                    id="searchButton"
+                >
+                    SEARCH
+                </button>
+
+            </div>
+
+        </form>
+
+
+        <div class="suggestions">
+
+            <span>TRY:</span>
+
+            <button
+                class="suggestion"
+                data-word="technology"
+                type="button"
+            >
+                technology
+            </button>
+
+            <button
+                class="suggestion"
+                data-word="future"
+                type="button"
+            >
+                future
+            </button>
+
+            <button
+                class="suggestion"
+                data-word="artificial"
+                type="button"
+            >
+                artificial
+            </button>
+
+            <button
+                class="suggestion"
+                data-word="innovation"
+                type="button"
+            >
+                innovation
+            </button>
+
+        </div>
+
+    </section>
+
+
+    <!-- LOADING -->
+    <section
+        class="state hidden"
+        id="loading"
+    >
+
+        <div class="loader"></div>
+
+        <h3>
+            SEARCHING DICTIONARY
+        </h3>
+
+        <p>
+            Fetching live API data...
+        </p>
+
+    </section>
+
+
+    <!-- ERROR -->
+    <section
+        class="error hidden"
+        id="error"
+    >
+
+        <div class="error-icon">
+            !
+        </div>
+
+        <div>
+
+            <h3 id="errorTitle">
+                WORD NOT FOUND
+            </h3>
+
+            <p id="errorMessage">
+                We couldn't find that word.
+            </p>
+
+        </div>
+
+    </section>
+
+
+    <!-- RESULT -->
+    <section
+        class="result hidden"
+        id="result"
+    >
+
+        <div class="word-header">
+
+            <div>
+
+                <div class="result-label">
+                    DICTIONARY RESULT
+                </div>
+
+                <h2 id="resultWord">
+                    —
+                </h2>
+
+                <p id="phonetic">
+                    —
+                </p>
+
+            </div>
+
+
+            <button
+                class="audio-btn"
+                id="audioButton"
+                type="button"
+                title="Play pronunciation"
+                disabled
+            >
+                🔊
+            </button>
+
+        </div>
+
+
+        <div
+            class="meta"
+            id="meta"
+        ></div>
+
+
+        <div class="section-head">
+
+            <div class="section-title">
+
+                <span class="section-number">
+                    01
+                </span>
+
+                <h3>
+                    MEANINGS
+                </h3>
+
+            </div>
+
+            <span
+                class="count"
+                id="meaningCount"
+            >
+                0 meanings
+            </span>
+
+        </div>
+
+
+        <div
+            class="meanings"
+            id="meanings"
+        ></div>
+
+
+        <div class="source">
+
+            <div>
+
+                <small>
+                    DATA SOURCE
+                </small>
+
+                <strong>
+                    Free Dictionary API
+                </strong>
+
+            </div>
+
+            <span class="live">
+                LIVE
+            </span>
+
+        </div>
+
+    </section>
+
+
+    <!-- RECENT SEARCHES -->
+    <section class="recent">
+
+        <div class="section-head">
+
+            <div class="section-title">
+
+                <span class="section-number">
+                    02
+                </span>
+
+                <h3>
+                    RECENT SEARCHES
+                </h3>
+
+            </div>
+
+            <button
+                id="clearHistory"
+                class="clear-history"
+                type="button"
+            >
+                CLEAR
+            </button>
+
+        </div>
+
+
+        <div
+            class="recent-list"
+            id="recentList"
+        >
+
+            <span class="empty">
+                No recent searches
+            </span>
+
+        </div>
+
+    </section>
+
+
+    <!-- FOOTER -->
+    <footer>
+
+        <span>
+            WORDLOOKUP v1.0
+        </span>
+
+        <span>
+            HTML5 · CSS3 · JAVASCRIPT · REST API
+        </span>
+
+    </footer>
+
+</div>
+
+
+<script>
+
+/* =====================================================
+   TASK 28
+   DICTIONARY & WORD LOOKUP
+
+   ONE FILE VERSION
+===================================================== */
+
+
+/* =====================================================
+   CONFIGURATION
+===================================================== */
+
+const API_URL =
+    "https://api.dictionaryapi.dev/api/v2/entries/en";
+
+
+/* =====================================================
+   ELEMENTS
+===================================================== */
+
+const searchForm =
+    document.getElementById("searchForm");
+
+const wordInput =
+    document.getElementById("wordInput");
+
+const searchButton =
+    document.getElementById("searchButton");
+
+const clearButton =
+    document.getElementById("clearButton");
+
+const loading =
+    document.getElementById("loading");
+
+const errorBox =
+    document.getElementById("error");
+
+const errorTitle =
+    document.getElementById("errorTitle");
+
+const errorMessage =
+    document.getElementById("errorMessage");
+
+const result =
+    document.getElementById("result");
+
+const resultWord =
+    document.getElementById("resultWord");
+
+const phonetic =
+    document.getElementById("phonetic");
+
+const audioButton =
+    document.getElementById("audioButton");
+
+const meta =
+    document.getElementById("meta");
+
+const meanings =
+    document.getElementById("meanings");
+
+const meaningCount =
+    document.getElementById("meaningCount");
+
+const recentList =
+    document.getElementById("recentList");
+
+const clearHistory =
+    document.getElementById("clearHistory");
+
+const apiStatus =
+    document.getElementById("apiStatus");
+
+
+/* =====================================================
+   STATE
+===================================================== */
+
+let pronunciationAudio = null;
+
+const HISTORY_KEY =
+    "wordlookup-history";
+
+const MAX_HISTORY = 8;
+
+
+/* =====================================================
+   INIT
+===================================================== */
+
+document.addEventListener(
+    "DOMContentLoaded",
+    () => {
+
+        renderHistory();
+
+        wordInput.focus();
+
+    }
+);
+
+
+/* =====================================================
+   SEARCH
+===================================================== */
+
+searchForm.addEventListener(
+    "submit",
+    function(event) {
+
+        event.preventDefault();
+
+        const word =
+            wordInput.value.trim();
+
+        lookupWord(word);
+
+    }
+);
+
+
+/* =====================================================
+   LOOKUP WORD
+===================================================== */
+
+async function lookupWord(word) {
+
+    word =
+        word
+            .trim()
+            .toLowerCase();
+
+
+    if (!word) {
+
+        showError(
+            "EMPTY SEARCH",
+            "Please enter a word."
+        );
+
+        return;
+
+    }
+
+
+    if (
+        !/^[a-zA-Z][a-zA-Z'-]{0,49}$/.test(word)
+    ) {
+
+        showError(
+            "INVALID WORD",
+            "Please enter a valid English word."
+        );
+
+        return;
+
+    }
+
+
+    setLoading(true);
+
+
+    try {
+
+        apiStatus.textContent =
+            "API REQUEST";
+
+
+        const url =
+            `${API_URL}/${encodeURIComponent(word)}`;
+
+
+        const response =
+            await fetch(
+                url,
+                {
+                    method: "GET",
+
+                    headers: {
+                        "Accept":
+                            "application/json"
+                    },
+
+                    cache: "no-store"
+                }
+            );
+
+
+        let data;
+
+        try {
+
+            data =
+                await response.json();
+
+        } catch {
+
+            throw new Error(
+                "The dictionary API returned an invalid response."
+            );
+
+        }
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                data?.message ||
+                "Word not found."
+            );
+
+        }
+
+
+        if (
+            !Array.isArray(data) ||
+            data.length === 0
+        ) {
+
+            throw new Error(
+                "No dictionary result was found."
+            );
+
+        }
+
+
+        displayResult(data);
+
+        saveHistory(word);
+
+        hideError();
+
+        result.classList.remove(
+            "hidden"
+        );
+
+        apiStatus.textContent =
+            "API ONLINE";
+
+
+        result.scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+        });
+
+
+    } catch (error) {
+
+        result.classList.add(
+            "hidden"
+        );
+
+
+        apiStatus.textContent =
+            "API ERROR";
+
+
+        let message =
+            error.message ||
+            "Unable to fetch dictionary data.";
+
+
+        if (
+            message.toLowerCase()
+                .includes("failed to fetch")
+        ) {
+
+            message =
+                "The browser could not connect to the dictionary API. If GitHub Pages blocks the request, a server-side API proxy is required.";
+
+        }
+
+
+        showError(
+            "LOOKUP FAILED",
+            message
+        );
+
+
+    } finally {
+
+        setLoading(false);
+
+    }
+
+}
+
+
+/* =====================================================
+   DISPLAY RESULT
+===================================================== */
+
+function displayResult(data) {
+
+    const entry =
+        data[0];
+
+
+    resultWord.textContent =
+        entry.word || "Unknown";
+
+
+    phonetic.textContent =
+        getPhonetic(data) ||
+        "Phonetic unavailable";
+
+
+    setupAudio(data);
+
+    displayMeta(data);
+
+    displayMeanings(data);
+
+}
+
+
+/* =====================================================
+   PHONETIC
+===================================================== */
+
+function getPhonetic(data) {
+
+    for (
+        const entry of data
+    ) {
+
+        if (entry.phonetic) {
+
+            return entry.phonetic;
+
+        }
+
+
+        if (
+            Array.isArray(
+                entry.phonetics
+            )
+        ) {
+
+            const item =
+                entry.phonetics.find(
+                    p =>
+                        p.phonetic
+                );
+
+
+            if (item) {
+
+                return item.phonetic;
+
+            }
+
+        }
+
+    }
+
+    return "";
+
+}
+
+
+/* =====================================================
+   AUDIO
+===================================================== */
+
+function getAudio(data) {
+
+    for (
+        const entry of data
+    ) {
+
+        if (
+            !Array.isArray(
+                entry.phonetics
+            )
+        ) {
+
+            continue;
+
+        }
+
+
+        const item =
+            entry.phonetics.find(
+                p =>
+                    p.audio &&
+                    p.audio.trim()
+            );
+
+
+        if (item) {
+
+            return item.audio;
+
+        }
+
+    }
+
+    return "";
+
+}
+
+
+function setupAudio(data) {
+
+    const audioURL =
+        getAudio(data);
+
+
+    if (pronunciationAudio) {
+
+        pronunciationAudio.pause();
+
+        pronunciationAudio =
+            null;
+
+    }
+
+
+    if (!audioURL) {
+
+        audioButton.disabled =
+            true;
+
+        return;
+
+    }
+
+
+    pronunciationAudio =
+        new Audio(audioURL);
+
+
+    audioButton.disabled =
+        false;
+
+
+    audioButton.onclick =
+        function() {
+
+            if (
+                pronunciationAudio
+            ) {
+
+                pronunciationAudio
+                    .play()
+                    .catch(
+                        () => {
+
+                            showError(
+                                "AUDIO ERROR",
+                                "Pronunciation audio could not be played."
+                            );
+
+                        }
+                    );
+
+            }
+
+        };
+
+}
+
+
+/* =====================================================
+   META
+===================================================== */
+
+function displayMeta(data) {
+
+    meta.innerHTML = "";
+
+
+    const parts =
+        new Set();
+
+
+    data.forEach(
+        entry => {
+
+            if (
+                Array.isArray(
+                    entry.meanings
+                )
+            ) {
+
+                entry.meanings.forEach(
+                    meaning => {
+
+                        if (
+                            meaning.partOfSpeech
+                        ) {
+
+                            parts.add(
+                                meaning.partOfSpeech
+                            );
+
+                        }
+
+                    }
+                );
+
+            }
+
+        }
+    );
+
+
+    parts.forEach(
+        part => {
+
+            addMeta(
+                part
+            );
+
+        }
+    );
+
+
+    addMeta(
+        `${data.length} API entr${data.length === 1 ? "y" : "ies"}`
+    );
+
+}
+
+
+function addMeta(text) {
+
+    const element =
+        document.createElement(
+            "span"
+        );
+
+
+    element.className =
+        "meta";
+
+
+    element.textContent =
+        text;
+
+
+    const wrapper =
+        document.createElement(
+            "span"
+        );
+
+
+    wrapper.className =
+        "meta-item";
+
+
+    wrapper.textContent =
+        text;
+
+
+    document
+        .getElementById("meta")
+        .appendChild(wrapper);
+
+}
+
+
+/* =====================================================
+   MEANINGS
+===================================================== */
+
+function displayMeanings(data) {
+
+    meanings.innerHTML =
+        "";
+
+
+    let total =
+        0;
+
+
+    data.forEach(
+        entry => {
+
+            if (
+                !Array.isArray(
+                    entry.meanings
+                )
+            ) {
+
+                return;
+
+            }
+
+
+            entry.meanings.forEach(
+                meaning => {
+
+                    total++;
+
+
+                    const card =
+                        document.createElement(
+                            "article"
+                        );
+
+
+                    card.className =
+                        "meaning-card";
+
+
+                    const part =
+                        document.createElement(
+                            "div"
+                        );
+
+
+                    part.className =
+                        "part";
+
+
+                    part.textContent =
+                        meaning.partOfSpeech ||
+                        "Meaning";
+
+
+                    card.appendChild(
+                        part
+                    );
+
+
+                    if (
+                        Array.isArray(
+                            meaning.definitions
+                        )
+                    ) {
+
+                        meaning.definitions
+                            .forEach(
+                                (
+                                    item,
+                                    index
+                                ) => {
+
+                                    const row =
+                                        document.createElement(
+                                            "div"
+                                        );
+
+
+                                    row.className =
+                                        "definition";
+
+
+                                    const number =
+                                        document.createElement(
+                                            "span"
+                                        );
+
+
+                                    number.className =
+                                        "definition-number";
+
+
+                                    number.textContent =
+                                        String(
+                                            index + 1
+                                        ).padStart(
+                                            2,
+                                            "0"
+                                        );
+
+
+                                    const content =
+                                        document.createElement(
+                                            "div"
+                                        );
+
+
+                                    const definition =
+                                        document.createElement(
+                                            "p"
+                                        );
+
+
+                                    definition.className =
+                                        "definition-text";
+
+
+                                    definition.textContent =
+                                        item.definition ||
+                                        "Definition unavailable.";
+
+
+                                    content.appendChild(
+                                        definition
+                                    );
+
+
+                                    if (
+                                        item.example
+                                    ) {
+
+                                        const example =
+                                            document.createElement(
+                                                "p"
+                                            );
+
+
+                                        example.className =
+                                            "example";
+
+
+                                        example.textContent =
+                                            `"${item.example}"`;
+
+
+                                        content.appendChild(
+                                            example
+                                        );
+
+                                    }
+
+
+                                    row.appendChild(
+                                        number
+                                    );
+
+
+                                    row.appendChild(
+                                        content
+                                    );
+
+
+                                    card.appendChild(
+                                        row
+                                    );
+
+                                }
+                            );
+
+                    }
+
+
+                    meanings.appendChild(
+                        card
+                    );
+
+                }
+            );
+
+        }
+    );
+
+
+    meaningCount.textContent =
+        `${total} meaning${total === 1 ? "" : "s"}`;
+
+}
+
+
+/* =====================================================
+   LOADING
+===================================================== */
+
+function setLoading(active) {
+
+    if (active) {
+
+        loading.classList.remove(
+            "hidden"
+        );
+
+        errorBox.classList.add(
+            "hidden"
+        );
+
+        result.classList.add(
+            "hidden"
+        );
+
+        searchButton.disabled =
+            true;
+
+        searchButton.textContent =
+            "SEARCHING";
+
+    } else {
+
+        loading.classList.add(
+            "hidden"
+        );
+
+        searchButton.disabled =
+            false;
+
+        searchButton.textContent =
+            "SEARCH";
+
+    }
+
+}
+
+
+/* =====================================================
+   ERROR
+===================================================== */
+
+function showError(
+    title,
+    message
+) {
+
+    errorTitle.textContent =
+        title;
+
+    errorMessage.textContent =
+        message;
+
+    errorBox.classList.remove(
+        "hidden"
+    );
+
+}
+
+
+function hideError() {
+
+    errorBox.classList.add(
+        "hidden"
+    );
+
+}
+
+
+/* =====================================================
+   CLEAR
+===================================================== */
+
+clearButton.addEventListener(
+    "click",
+    function() {
+
+        wordInput.value =
+            "";
+
+        wordInput.focus();
+
+        result.classList.add(
+            "hidden"
+        );
+
+        hideError();
+
+    }
+);
+
+
+/* =====================================================
+   SUGGESTIONS
+===================================================== */
+
+document
+    .querySelectorAll(
+        ".suggestion"
+    )
+    .forEach(
+        button => {
+
+            button.addEventListener(
+                "click",
+                function() {
+
+                    const word =
+                        this.dataset.word;
+
+
+                    wordInput.value =
+                        word;
+
+
+                    lookupWord(
+                        word
+                    );
+
+                }
+            );
+
+        }
+    );
+
+
+/* =====================================================
+   HISTORY
+===================================================== */
+
+function getHistory() {
+
+    try {
+
+        const saved =
+            localStorage.getItem(
+                HISTORY_KEY
+            );
+
+
+        if (!saved) {
+
+            return [];
+
+        }
+
+
+        const parsed =
+            JSON.parse(saved);
+
+
+        return Array.isArray(
+            parsed
+        )
+            ? parsed
+            : [];
+
+    } catch {
+
+        return [];
+
+    }
+
+}
+
+
+function saveHistory(word) {
+
+    let history =
+        getHistory();
+
+
+    history =
+        history.filter(
+            item =>
+                item !== word
+        );
+
+
+    history.unshift(
+        word
+    );
+
+
+    history =
+        history.slice(
+            0,
+            MAX_HISTORY
+        );
+
+
+    try {
+
+        localStorage.setItem(
+            HISTORY_KEY,
+            JSON.stringify(
+                history
+            )
+        );
+
+    } catch {
+
+        // Storage unavailable.
+
+    }
+
+
+    renderHistory();
+
+}
+
+
+function renderHistory() {
+
+    const history =
+        getHistory();
+
+
+    recentList.innerHTML =
+        "";
+
+
+    if (
+        history.length === 0
+    ) {
+
+        const empty =
+            document.createElement(
+                "span"
+            );
+
+
+        empty.className =
+            "empty";
+
+
+        empty.textContent =
+            "No recent searches";
+
+
+        recentList.appendChild(
+            empty
+        );
+
+
+        return;
+
+    }
+
+
+    history.forEach(
+        word => {
+
+            const button =
+                document.createElement(
+                    "button"
+                );
+
+
+            button.type =
+                "button";
+
+
+            button.className =
+                "recent-word";
+
+
+            button.textContent =
+                word;
+
+
+            button.addEventListener(
+                "click",
+                function() {
+
+                    wordInput.value =
+                        word;
+
+                    lookupWord(
+                        word
+                    );
+
+                }
+            );
+
+
+            recentList.appendChild(
+                button
+            );
+
+        }
+    );
+
+}
+
+
+/* =====================================================
+   CLEAR HISTORY
+===================================================== */
+
+clearHistory.addEventListener(
+    "click",
+    function() {
+
+        localStorage.removeItem(
+            HISTORY_KEY
+        );
+
+        renderHistory();
+
+    }
+);
+
+
+/* =====================================================
+   KEYBOARD
+===================================================== */
+
+document.addEventListener(
+    "keydown",
+    function(event) {
+
+        if (
+            event.key === "/" &&
+            document.activeElement !== wordInput
+        ) {
+
+            event.preventDefault();
+
+            wordInput.focus();
+
+        }
+
+
+        if (
+            event.key === "Escape"
+        ) {
+
+            wordInput.value =
+                "";
+
+            result.classList.add(
+                "hidden"
+            );
+
+            hideError();
+
+        }
+
+    }
+);
+
+</script>
+
+</body>
+</html>
