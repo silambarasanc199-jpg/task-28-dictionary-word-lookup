@@ -15,7 +15,7 @@ let audioURL = "";
 
 
 /* =========================
-   MAIN SEARCH
+   SEARCH WORD
 ========================= */
 
 async function searchWord(word = wordInput.value) {
@@ -28,51 +28,46 @@ async function searchWord(word = wordInput.value) {
     }
 
     hideAll();
+
     loading.classList.remove("hidden");
 
     try {
 
-        /* PRIMARY API */
-
-        const primaryURL =
-            "https://api.dictionaryapi.dev/api/v2/entries/en/" +
+        const apiURL =
+            "https://en.wiktionary.org/api/rest_v1/page/definition/" +
             encodeURIComponent(word);
 
-        const response = await fetch(primaryURL);
-
-        if (response.ok) {
-
-            const data = await response.json();
-
-            if (Array.isArray(data) && data.length > 0) {
-                displayFreeDictionary(data[0]);
-                return;
+        const response = await fetch(apiURL, {
+            method: "GET",
+            headers: {
+                "Accept": "application/json"
             }
+        });
+
+        if (!response.ok) {
+            throw new Error(
+                `Word not found (${response.status})`
+            );
         }
 
-        /* FALLBACK API */
+        const data = await response.json();
 
-        await searchWiktionary(word);
+        if (!data.en) {
+            throw new Error(
+                "No English definition was found."
+            );
+        }
+
+        displayResults(data.en, word);
 
     } catch (error) {
 
-        console.log("Primary API unavailable:", error);
+        console.error("Dictionary API Error:", error);
 
-        try {
-
-            await searchWiktionary(word);
-
-        } catch (fallbackError) {
-
-            console.log(
-                "Fallback API unavailable:",
-                fallbackError
-            );
-
-            showError(
-                "Dictionary services are currently unavailable. Please try again."
-            );
-        }
+        showError(
+            error.message ||
+            "Unable to connect to the dictionary API."
+        );
 
     } finally {
 
@@ -83,157 +78,14 @@ async function searchWord(word = wordInput.value) {
 
 
 /* =========================
-   FREE DICTIONARY API
+   DISPLAY RESULTS
 ========================= */
 
-function displayFreeDictionary(data) {
+function displayResults(entries, word) {
 
     result.classList.remove("hidden");
 
-    wordTitle.textContent =
-        data.word || "Unknown";
-
-    phonetic.textContent =
-        data.phonetic || "";
-
-    audioURL = "";
-
-    audioBtn.classList.add("hidden");
-
-    if (data.phonetics) {
-
-        const audioData =
-            data.phonetics.find(
-                item =>
-                    item.audio &&
-                    item.audio.trim() !== ""
-            );
-
-        if (audioData) {
-
-            audioURL =
-                audioData.audio.startsWith("//")
-                    ? "https:" + audioData.audio
-                    : audioData.audio;
-
-            audioBtn.classList.remove("hidden");
-        }
-    }
-
-    meaningsContainer.innerHTML = "";
-
-    data.meanings.forEach(meaning => {
-
-        const card =
-            document.createElement("div");
-
-        card.className =
-            "meaning-card";
-
-        const part =
-            document.createElement("div");
-
-        part.className =
-            "part-of-speech";
-
-        part.textContent =
-            meaning.partOfSpeech || "Meaning";
-
-        card.appendChild(part);
-
-        meaning.definitions.forEach(
-            (definition, index) => {
-
-                const box =
-                    document.createElement("div");
-
-                box.className =
-                    "definition";
-
-                const number =
-                    document.createElement("span");
-
-                number.className =
-                    "definition-number";
-
-                number.textContent =
-                    String(index + 1).padStart(2, "0");
-
-                const content =
-                    document.createElement("div");
-
-                const text =
-                    document.createElement("p");
-
-                text.textContent =
-                    definition.definition;
-
-                content.appendChild(text);
-
-                if (definition.example) {
-
-                    const example =
-                        document.createElement("div");
-
-                    example.className =
-                        "example";
-
-                    example.textContent =
-                        `"${definition.example}"`;
-
-                    content.appendChild(example);
-                }
-
-                box.appendChild(number);
-                box.appendChild(content);
-
-                card.appendChild(box);
-            }
-        );
-
-        meaningsContainer.appendChild(card);
-    });
-}
-
-
-/* =========================
-   WIKTIONARY FALLBACK
-========================= */
-
-async function searchWiktionary(word) {
-
-    const url =
-        "https://en.wiktionary.org/api/rest_v1/page/definition/" +
-        encodeURIComponent(word);
-
-    const response =
-        await fetch(url);
-
-    if (!response.ok) {
-        throw new Error("Fallback word not found");
-    }
-
-    const data =
-        await response.json();
-
-    if (!data.en) {
-        throw new Error("No English definition found");
-    }
-
-    displayWiktionary(data, word);
-}
-
-
-/* =========================
-   DISPLAY WIKTIONARY
-========================= */
-
-function displayWiktionary(data, word) {
-
-    result.classList.remove("hidden");
-
-    wordTitle.textContent =
-        word;
+    wordTitle.textContent = word;
 
     phonetic.textContent = "";
 
@@ -243,39 +95,43 @@ function displayWiktionary(data, word) {
 
     meaningsContainer.innerHTML = "";
 
-    const english =
-        data.en;
 
-    english.forEach(section => {
+    entries.forEach((entry) => {
 
         const card =
             document.createElement("div");
 
-        card.className =
-            "meaning-card";
+        card.className = "meaning-card";
 
-        const part =
+
+        /* PART OF SPEECH */
+
+        const partOfSpeech =
             document.createElement("div");
 
-        part.className =
+        partOfSpeech.className =
             "part-of-speech";
 
-        part.textContent =
-            section.partOfSpeech ||
+        partOfSpeech.textContent =
+            entry.partOfSpeech ||
             "Definition";
 
-        card.appendChild(part);
+        card.appendChild(partOfSpeech);
 
-        if (section.definitions) {
 
-            section.definitions.forEach(
-                (definition, index) => {
+        /* DEFINITIONS */
 
-                    const box =
+        if (entry.definitions) {
+
+            entry.definitions.forEach(
+                (item, index) => {
+
+                    const definitionBox =
                         document.createElement("div");
 
-                    box.className =
+                    definitionBox.className =
                         "definition";
+
 
                     const number =
                         document.createElement("span");
@@ -287,22 +143,32 @@ function displayWiktionary(data, word) {
                         String(index + 1)
                             .padStart(2, "0");
 
+
                     const content =
                         document.createElement("div");
 
-                    const text =
+
+                    const definition =
                         document.createElement("p");
 
-                    text.textContent =
-                        definition.definition ||
-                        "Definition unavailable.";
+                    definition.textContent =
+                        cleanText(
+                            item.definition ||
+                            "Definition unavailable."
+                        );
 
-                    content.appendChild(text);
 
-                    if (definition.examples) {
+                    content.appendChild(
+                        definition
+                    );
 
-                        definition.examples.forEach(
-                            exampleData => {
+
+                    /* EXAMPLES */
+
+                    if (item.examples) {
+
+                        item.examples.forEach(
+                            (exampleItem) => {
 
                                 const example =
                                     document.createElement(
@@ -313,49 +179,63 @@ function displayWiktionary(data, word) {
                                     "example";
 
                                 example.textContent =
-                                    `"${exampleData.example}"`;
+                                    `"${cleanText(
+                                        exampleItem.example ||
+                                        ""
+                                    )}"`;
 
                                 content.appendChild(
                                     example
                                 );
+
                             }
                         );
+
                     }
 
-                    box.appendChild(number);
-                    box.appendChild(content);
 
-                    card.appendChild(box);
+                    definitionBox.appendChild(
+                        number
+                    );
+
+                    definitionBox.appendChild(
+                        content
+                    );
+
+                    card.appendChild(
+                        definitionBox
+                    );
+
                 }
             );
+
         }
 
-        meaningsContainer.appendChild(card);
+
+        meaningsContainer.appendChild(
+            card
+        );
+
     });
 }
 
 
 /* =========================
-   AUDIO
+   CLEAN WIKTIONARY TEXT
 ========================= */
 
-audioBtn.addEventListener(
-    "click",
-    () => {
+function cleanText(text) {
 
-        if (!audioURL) return;
+    const temp =
+        document.createElement("div");
 
-        const audio =
-            new Audio(audioURL);
+    temp.innerHTML = text;
 
-        audio.play().catch(
-            error => console.log(
-                "Audio error:",
-                error
-            )
-        );
-    }
-);
+    return temp.textContent ||
+           temp.innerText ||
+           text;
+
+}
 
 
 /* =========================
@@ -364,7 +244,9 @@ audioBtn.addEventListener(
 
 searchBtn.addEventListener(
     "click",
-    () => searchWord()
+    () => {
+        searchWord();
+    }
 );
 
 
@@ -374,14 +256,16 @@ searchBtn.addEventListener(
 
 wordInput.addEventListener(
     "keydown",
-    event => {
+    (event) => {
 
         if (event.key === "Enter") {
 
             event.preventDefault();
 
             searchWord();
+
         }
+
     }
 );
 
@@ -392,18 +276,22 @@ wordInput.addEventListener(
 
 document
     .querySelectorAll(".suggestion")
-    .forEach(button => {
+    .forEach((button) => {
 
         button.addEventListener(
             "click",
             () => {
 
-                wordInput.value =
+                const word =
                     button.textContent.trim();
 
-                searchWord();
+                wordInput.value = word;
+
+                searchWord(word);
+
             }
         );
+
     });
 
 
@@ -415,15 +303,18 @@ function showError(message) {
 
     result.classList.add("hidden");
 
+    audioBtn.classList.add("hidden");
+
     errorBox.classList.remove("hidden");
 
     errorMessage.textContent =
         message;
+
 }
 
 
 /* =========================
-   HIDE UI
+   HIDE UI STATES
 ========================= */
 
 function hideAll() {
@@ -435,4 +326,5 @@ function hideAll() {
     loading.classList.add("hidden");
 
     audioBtn.classList.add("hidden");
-}
+
+}                
