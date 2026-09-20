@@ -3,12 +3,10 @@ const searchBtn = document.getElementById("searchBtn");
 
 const result = document.getElementById("result");
 const meaningsContainer = document.getElementById("meanings");
-
 const wordTitle = document.getElementById("wordTitle");
 const phonetic = document.getElementById("phonetic");
 
 const audioBtn = document.getElementById("audioBtn");
-
 const loading = document.getElementById("loading");
 const errorBox = document.getElementById("errorBox");
 const errorMessage = document.getElementById("errorMessage");
@@ -17,7 +15,7 @@ let audioURL = "";
 
 
 /* =========================
-   SEARCH WORD
+   MAIN SEARCH
 ========================= */
 
 async function searchWord(word = wordInput.value) {
@@ -30,51 +28,51 @@ async function searchWord(word = wordInput.value) {
     }
 
     hideAll();
-
     loading.classList.remove("hidden");
 
     try {
 
-        const apiURL =
+        /* PRIMARY API */
+
+        const primaryURL =
             "https://api.dictionaryapi.dev/api/v2/entries/en/" +
             encodeURIComponent(word);
 
-        const response = await fetch(apiURL, {
-            method: "GET",
-            headers: {
-                "Accept": "application/json"
+        const response = await fetch(primaryURL);
+
+        if (response.ok) {
+
+            const data = await response.json();
+
+            if (Array.isArray(data) && data.length > 0) {
+                displayFreeDictionary(data[0]);
+                return;
             }
-        });
-
-        if (!response.ok) {
-
-            if (response.status === 404) {
-                throw new Error(
-                    `No dictionary entry found for "${word}".`
-                );
-            }
-
-            throw new Error(
-                `Dictionary API returned status ${response.status}.`
-            );
         }
 
-        const data = await response.json();
+        /* FALLBACK API */
 
-        if (!Array.isArray(data) || data.length === 0) {
-            throw new Error("No dictionary data was returned.");
-        }
-
-        displayWord(data[0]);
+        await searchWiktionary(word);
 
     } catch (error) {
 
-        console.error("Dictionary API Error:", error);
+        console.log("Primary API unavailable:", error);
 
-        showError(
-            error.message ||
-            "Unable to connect to the dictionary service."
-        );
+        try {
+
+            await searchWiktionary(word);
+
+        } catch (fallbackError) {
+
+            console.log(
+                "Fallback API unavailable:",
+                fallbackError
+            );
+
+            showError(
+                "Dictionary services are currently unavailable. Please try again."
+            );
+        }
 
     } finally {
 
@@ -85,45 +83,22 @@ async function searchWord(word = wordInput.value) {
 
 
 /* =========================
-   DISPLAY WORD
+   FREE DICTIONARY API
 ========================= */
 
-function displayWord(data) {
+function displayFreeDictionary(data) {
 
     result.classList.remove("hidden");
 
     wordTitle.textContent =
         data.word || "Unknown";
 
-    phonetic.textContent = "";
+    phonetic.textContent =
+        data.phonetic || "";
 
     audioURL = "";
 
-    /* PHONETIC */
-
-    if (data.phonetic) {
-
-        phonetic.textContent =
-            data.phonetic;
-
-    } else if (data.phonetics) {
-
-        const phoneticData =
-            data.phonetics.find(
-                item => item.text
-            );
-
-        if (phoneticData) {
-
-            phonetic.textContent =
-                phoneticData.text;
-
-        }
-
-    }
-
-
-    /* AUDIO */
+    audioBtn.classList.add("hidden");
 
     if (data.phonetics) {
 
@@ -137,158 +112,226 @@ function displayWord(data) {
         if (audioData) {
 
             audioURL =
-                audioData.audio;
+                audioData.audio.startsWith("//")
+                    ? "https:" + audioData.audio
+                    : audioData.audio;
 
-            audioBtn.classList.remove(
-                "hidden"
-            );
-
+            audioBtn.classList.remove("hidden");
         }
-
     }
-
-
-    /* CLEAR OLD RESULTS */
 
     meaningsContainer.innerHTML = "";
 
+    data.meanings.forEach(meaning => {
 
-    /* MEANINGS */
+        const card =
+            document.createElement("div");
 
-    if (!data.meanings ||
-        data.meanings.length === 0) {
+        card.className =
+            "meaning-card";
 
-        showError(
-            "The word was found, but no definitions were returned."
+        const part =
+            document.createElement("div");
+
+        part.className =
+            "part-of-speech";
+
+        part.textContent =
+            meaning.partOfSpeech || "Meaning";
+
+        card.appendChild(part);
+
+        meaning.definitions.forEach(
+            (definition, index) => {
+
+                const box =
+                    document.createElement("div");
+
+                box.className =
+                    "definition";
+
+                const number =
+                    document.createElement("span");
+
+                number.className =
+                    "definition-number";
+
+                number.textContent =
+                    String(index + 1).padStart(2, "0");
+
+                const content =
+                    document.createElement("div");
+
+                const text =
+                    document.createElement("p");
+
+                text.textContent =
+                    definition.definition;
+
+                content.appendChild(text);
+
+                if (definition.example) {
+
+                    const example =
+                        document.createElement("div");
+
+                    example.className =
+                        "example";
+
+                    example.textContent =
+                        `"${definition.example}"`;
+
+                    content.appendChild(example);
+                }
+
+                box.appendChild(number);
+                box.appendChild(content);
+
+                card.appendChild(box);
+            }
         );
 
-        return;
+        meaningsContainer.appendChild(card);
+    });
+}
+
+
+/* =========================
+   WIKTIONARY FALLBACK
+========================= */
+
+async function searchWiktionary(word) {
+
+    const url =
+        "https://en.wiktionary.org/api/rest_v1/page/definition/" +
+        encodeURIComponent(word);
+
+    const response =
+        await fetch(url);
+
+    if (!response.ok) {
+        throw new Error("Fallback word not found");
     }
 
+    const data =
+        await response.json();
 
-    data.meanings.forEach(
-        (meaning) => {
+    if (!data.en) {
+        throw new Error("No English definition found");
+    }
 
-            const card =
-                document.createElement("div");
-
-            card.className =
-                "meaning-card";
-
-
-            /* PART OF SPEECH */
-
-            const partOfSpeech =
-                document.createElement("div");
-
-            partOfSpeech.className =
-                "part-of-speech";
-
-            partOfSpeech.textContent =
-                meaning.partOfSpeech ||
-                "Meaning";
+    displayWiktionary(data, word);
+}
 
 
-            card.appendChild(
-                partOfSpeech
-            );
+/* =========================
+   DISPLAY WIKTIONARY
+========================= */
 
+function displayWiktionary(data, word) {
 
-            /* DEFINITIONS */
+    result.classList.remove("hidden");
 
-            if (meaning.definitions) {
+    wordTitle.textContent =
+        word;
 
-                meaning.definitions.forEach(
-                    (definition, index) => {
+    phonetic.textContent = "";
 
-                        const definitionBox =
-                            document.createElement(
-                                "div"
-                            );
+    audioURL = "";
 
-                        definitionBox.className =
-                            "definition";
+    audioBtn.classList.add("hidden");
 
+    meaningsContainer.innerHTML = "";
 
-                        const number =
-                            document.createElement(
-                                "span"
-                            );
+    const english =
+        data.en;
 
-                        number.className =
-                            "definition-number";
+    english.forEach(section => {
 
-                        number.textContent =
-                            String(index + 1)
-                                .padStart(2, "0");
+        const card =
+            document.createElement("div");
 
+        card.className =
+            "meaning-card";
 
-                        const content =
-                            document.createElement(
-                                "div"
-                            );
+        const part =
+            document.createElement("div");
 
+        part.className =
+            "part-of-speech";
 
-                        const text =
-                            document.createElement(
-                                "p"
-                            );
+        part.textContent =
+            section.partOfSpeech ||
+            "Definition";
 
-                        text.textContent =
-                            definition.definition ||
-                            "Definition unavailable.";
+        card.appendChild(part);
 
+        if (section.definitions) {
 
-                        content.appendChild(
-                            text
-                        );
+            section.definitions.forEach(
+                (definition, index) => {
 
+                    const box =
+                        document.createElement("div");
 
-                        /* EXAMPLE */
+                    box.className =
+                        "definition";
 
-                        if (definition.example) {
+                    const number =
+                        document.createElement("span");
 
-                            const example =
-                                document.createElement(
-                                    "div"
+                    number.className =
+                        "definition-number";
+
+                    number.textContent =
+                        String(index + 1)
+                            .padStart(2, "0");
+
+                    const content =
+                        document.createElement("div");
+
+                    const text =
+                        document.createElement("p");
+
+                    text.textContent =
+                        definition.definition ||
+                        "Definition unavailable.";
+
+                    content.appendChild(text);
+
+                    if (definition.examples) {
+
+                        definition.examples.forEach(
+                            exampleData => {
+
+                                const example =
+                                    document.createElement(
+                                        "div"
+                                    );
+
+                                example.className =
+                                    "example";
+
+                                example.textContent =
+                                    `"${exampleData.example}"`;
+
+                                content.appendChild(
+                                    example
                                 );
-
-                            example.className =
-                                "example";
-
-                            example.textContent =
-                                `"${definition.example}"`;
-
-                            content.appendChild(
-                                example
-                            );
-                        }
-
-
-                        definitionBox.appendChild(
-                            number
+                            }
                         );
-
-                        definitionBox.appendChild(
-                            content
-                        );
-
-                        card.appendChild(
-                            definitionBox
-                        );
-
                     }
-                );
 
-            }
+                    box.appendChild(number);
+                    box.appendChild(content);
 
-
-            meaningsContainer.appendChild(
-                card
+                    card.appendChild(box);
+                }
             );
-
         }
-    );
+
+        meaningsContainer.appendChild(card);
+    });
 }
 
 
@@ -298,24 +341,19 @@ function displayWord(data) {
 
 audioBtn.addEventListener(
     "click",
-    function () {
+    () => {
 
-        if (!audioURL) {
-            return;
-        }
+        if (!audioURL) return;
 
         const audio =
             new Audio(audioURL);
 
         audio.play().catch(
-            error => {
-                console.log(
-                    "Audio playback failed:",
-                    error
-                );
-            }
+            error => console.log(
+                "Audio error:",
+                error
+            )
         );
-
     }
 );
 
@@ -326,11 +364,7 @@ audioBtn.addEventListener(
 
 searchBtn.addEventListener(
     "click",
-    function () {
-
-        searchWord();
-
-    }
+    () => searchWord()
 );
 
 
@@ -340,22 +374,20 @@ searchBtn.addEventListener(
 
 wordInput.addEventListener(
     "keydown",
-    function (event) {
+    event => {
 
         if (event.key === "Enter") {
 
             event.preventDefault();
 
             searchWord();
-
         }
-
     }
 );
 
 
 /* =========================
-   SUGGESTION BUTTONS
+   SUGGESTIONS
 ========================= */
 
 document
@@ -364,43 +396,34 @@ document
 
         button.addEventListener(
             "click",
-            function () {
+            () => {
 
                 wordInput.value =
-                    this.textContent.trim();
+                    button.textContent.trim();
 
                 searchWord();
-
             }
         );
-
     });
 
 
 /* =========================
-   ERROR MESSAGE
+   ERROR
 ========================= */
 
 function showError(message) {
 
     result.classList.add("hidden");
 
-    loading.classList.add("hidden");
-
-    audioBtn.classList.add("hidden");
-
-    errorBox.classList.remove(
-        "hidden"
-    );
+    errorBox.classList.remove("hidden");
 
     errorMessage.textContent =
         message;
-
 }
 
 
 /* =========================
-   HIDE UI STATES
+   HIDE UI
 ========================= */
 
 function hideAll() {
@@ -412,5 +435,4 @@ function hideAll() {
     loading.classList.add("hidden");
 
     audioBtn.classList.add("hidden");
-
 }
